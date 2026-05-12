@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAPA_OS v2.0 - KONTROL DISIPLIN</title>
+    <style>
+        :root {
+            --neon-red: #ff0000;
+            --dark-void: #050505;
+            --border-color: #333;
+            --text-white: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+
+        body {
+            background-color: var(--dark-void);
+            color: var(--neon-red);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            /* Efek Monitor Jadul */
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+        }
+
+        /* HEADER */
+        .header {
+            width: 95%; max-width: 1000px;
+            border-bottom: 2px solid var(--neon-red);
+            padding-bottom: 10px; margin-bottom: 20px;
+            display: flex; justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .system-info { font-size: 0.75rem; color: var(--text-white); text-align: right; line-height: 1.2; }
+
+        /* DASHBOARD */
+        .dashboard {
+            width: 95%; max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.9); border: 1px solid var(--border-color);
+            padding: 25px; position: relative;
+            transition: 0.3s;
+        }
+
+        .panel:hover { border-color: var(--neon-red); box-shadow: 0 0 20px rgba(255, 0, 0, 0.15); }
+
+        /* TIMER */
+        .timer-display {
+            font-size: 6rem; font-weight: 900; color: white;
+            text-align: center; margin: 10px 0;
+            text-shadow: 0 0 20px var(--neon-red);
+        }
+
+        .controls button {
+            width: 100%; padding: 12px; margin-bottom: 10px;
+            background: transparent; border: 1px solid var(--neon-red);
+            color: var(--neon-red); font-weight: bold; cursor: pointer;
+            text-transform: uppercase; transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .controls button:hover { background: var(--neon-red); color: black; box-shadow: 0 0 15px var(--neon-red); }
+
+        /* PUSAT PERINTAH */
+        .input-group { display: flex; margin-bottom: 15px; }
+        
+        input {
+            flex: 1; background: #000; border: 1px solid var(--border-color);
+            padding: 15px; color: white; outline: none;
+            font-size: 0.9rem; border-right: none;
+        }
+
+        input:focus { border-color: var(--neon-red); }
+
+        .btn-kirim {
+            background: var(--neon-red); color: black;
+            border: 1px solid var(--neon-red); padding: 0 20px; 
+            font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+
+        /* RESPONS BOT */
+        #bot-box {
+            background: rgba(20, 0, 0, 0.5); border: 1px dashed #444;
+            padding: 15px; margin-bottom: 15px; min-height: 80px;
+            font-size: 0.85rem; color: var(--text-white);
+        }
+
+        .mission-list { list-style: none; max-height: 200px; overflow-y: auto; }
+        .mission-item {
+            background: #0d0d0d; padding: 12px; margin-bottom: 8px;
+            display: flex; justify-content: space-between;
+            border-left: 4px solid var(--neon-red);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .selesai { text-decoration: line-through; opacity: 0.3; border-left-color: #00ff00; color: #00ff00; }
+
+        /* LOGIKA & MOTIVASI */
+        .info-section {
+            width: 95%; max-width: 1000px; margin-top: 20px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+
+        .info-box { padding: 15px; font-size: 0.8rem; background: #000; border: 1px solid #222; }
+        .info-box b { color: white; }
+
+        .footer {
+            margin-top: 40px; text-align: center;
+            border-top: 1px solid #222; width: 100%; padding: 20px;
+            font-size: 0.7rem; color: #555;
+        }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-red); }
+
+        @media (max-width: 800px) { 
+            .dashboard, .info-section { grid-template-columns: 1fr; } 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1 style="letter-spacing: 2px;">RAPA_OS v2.0</h1>
+            <p style="font-size: 0.6rem; color: #888;">TERMINAL KENDALI MASA DEPAN</p>
+        </div>
+        <div class="system-info">
+            WAKTU: <span id="clock">--:--:--</span><br>
+            STATUS: <span id="status" style="color: gold;">SIAGA</span>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- PANEL TIMER -->
+        <div class="panel">
+            <p style="font-size: 0.7rem; color: #888;">[ PROTOKOL_WAKTU ]</p>
+            <div class="timer-display" id="timer">25:00</div>
+            <div class="controls">
+                <button onclick="mulai()">AKTIFKAN FOKUS</button>
+                <button onclick="reset()" style="border-color:#444; color:#444;">REBOOT SISTEM</button>
+            </div>
+            <p style="font-size: 0.65rem; margin-top: 10px; color: #666; text-align: center;">
+                "Gunakan teknik Pomodoro: 25 menit fokus, 5 menit istirahat."
+            </p>
+        </div>
+
+        <!-- PANEL PERINTAH -->
+        <div class="panel">
+            <p style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">[ DECK_KOMANDO ]</p>
+            
+            <div class="input-group">
+                <input type="text" id="cmdInput" placeholder="Masukkan misi atau perintah (contoh: belajar)...">
+                <button class="btn-kirim" onclick="proses()">KIRIM</button>
+            </div>
+
+            <div id="bot-box">
+                <span style="color: var(--neon-red); font-weight: bold;">[LOG_RAPA]: </span>
+                <span id="bot-response">Sistem siap. Silakan masukkan objektif Anda hari ini.</span>
+            </div>
+
+            <ul class="mission-list" id="missionList"></ul>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-box">
+            <p style="color: var(--neon-red); margin-bottom: 5px; font-weight: bold;">PANDUAN NAVIGASI:</p>
+            <p>> <b>"belajar"</b> : Set timer 25 menit (Mode Fokus Tinggi).</p>
+            <p>> <b>"istirahat"</b> : Set timer 5 menit (Mode Pemulihan).</p>
+            <p>> <b>"hapus"</b> : Membersihkan seluruh daftar misi.</p>
+            <p>> <b>Tugas Baru</b> : Ketik apa saja untuk menambah daftar misi.</p>
+        </div>
+        <div class="info-box">
+            <p style="color: var(--neon-red); margin-bottom: 5px; font-weight: bold;">CATATAN PENGGUNA:</p>
+            <p>> Klik pada <b>teks misi</b> jika sudah selesai dikerjakan.</p>
+            <p>> Klik <b>[HAPUS]</b> untuk membuang misi dari database.</p>
+            <p>> Jangan tutup browser saat timer sedang berjalan.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p style="letter-spacing: 5px; margin-bottom: 5px;">HAK CIPTA MILIK RAPA &copy; 2026</p>
+        <p>MEMBANGUN DISIPLIN, MENGHANCURKAN KEMALASAN.</p>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(freq, type, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const sounds = {
+            click: () => playSound(800, 'square', 0.1),
+            success: () => {
+                playSound(600, 'sine', 0.2);
+                setTimeout(() => playSound(1000, 'sine', 0.4), 100);
+            },
+            alert: () => {
+                playSound(300, 'sawtooth', 0.5);
+                setTimeout(() => playSound(200, 'sawtooth', 0.5), 300);
+            }
+        };
+
+        // --- CLOCK ---
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID');
+        }, 1000);
+
+        // --- CORE LOGIC ---
+        let detik = 25 * 60;
+        let jalan = false;
+        let timerId = null;
+
+        const motivasi = [
+            "Masa depan lo ditentukan oleh apa yang lo hajar hari ini!",
+            "Disiplin itu emang pait, tapi hasilnya manis banget.",
+            "Jangan berhenti pas capek, berhenti pas udah KELAR.",
+            "Rasa malas itu cuma ilusi, lo lebih kuat dari itu!",
+            "Setiap detik fokus lo adalah investasi buat masa depan.",
+            "Pecundang banyak alasan, pemenang banyak hasil.",
+            "Visualisasikan kesuksesan lo, lalu kerjakan!",
+            "Fokus bro! Dunia nggak bakal nunggu lo bangun."
+        ];
+
+        const display = document.getElementById('timer');
+        const bot = document.getElementById('bot-response');
+        const list = document.getElementById('missionList');
+
+        function perbaruiDisplay() {
+            let m = Math.floor(detik / 60);
+            let s = detik % 60;
+            display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function mulai() {
+            sounds.click();
+            if (!jalan) {
+                jalan = true;
+                document.getElementById('status').innerText = "FOKUS_AKTIF";
+                document.getElementById('status').style.color = "red";
+                bot.innerText = "Mode Fokus Diaktifkan. Jangan biarkan distraksi menang.";
+                timerId = setInterval(() => {
+                    detik--;
+                    perbaruiDisplay();
+                    if (detik <= 0) {
+                        clearInterval(timerId);
+                        sounds.alert();
+                        alert("WAKTU HABIS! Evaluasi hasil kerja lo sekarang!");
+                        reset();
+                    }
+                }, 1000);
+            }
+        }
+
+        function reset() {
+            sounds.click();
+            clearInterval(timerId);
+            jalan = false;
+            detik = 25 * 60;
+            perbaruiDisplay();
+            document.getElementById('status').innerText = "SIAGA";
+            document.getElementById('status').style.color = "gold";
+            bot.innerText = "Sistem telah di-reboot. Siap untuk misi selanjutnya.";
+        }
+
+        function proses() {
+            const input = document.getElementById('cmdInput');
+            const teks = input.value.toLowerCase().trim();
+
+            if (!teks) return;
+            sounds.click();
+
+            let randomMotivasi = motivasi[Math.floor(Math.random() * motivasi.length)];
+
+            if (teks === "belajar") {
+                detik = 25 * 60; perbaruiDisplay();
+                bot.innerHTML = `<b style="color:white">MODE BELAJAR:</b> 25 Menit. ${randomMotivasi}`;
+            } else if (teks === "istirahat") {
+                detik = 5 * 60; perbaruiDisplay();
+                bot.innerHTML = `<b style="color:white">MODE ISTIRAHAT:</b> 5 Menit. Ambil napas, minum air, lalu balik lagi!`;
+            } else if (teks === "hapus") {
+                list.innerHTML = "";
+                bot.innerText = "Seluruh database misi telah dimusnahkan.";
+            } else {
+                const li = document.createElement('li');
+                li.className = "mission-item";
+                li.innerHTML = `
+                    <span onclick="this.parentElement.classList.toggle('selesai'); sounds.success()" style="cursor:pointer; font-weight:bold;">> ${teks.toUpperCase()}</span>
+                    <span onclick="this.parentElement.remove(); sounds.click()" style="cursor:pointer; color: #444; font-size: 0.7rem;">[HAPUS]</span>
+                `;
+                list.prepend(li);
+                bot.innerHTML = `<b style="color:white">MISI BARU:</b> ${teks.toUpperCase()}. <br>${randomMotivasi}`;
+            }
+            input.value = "";
+        }
+
+        // Jalankan dengan Enter
+        document.getElementById('cmdInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') proses();
+        });
+
+        // Inisialisasi awal
+        perbaruiDisplay();
+    </script>
+</body>
+</html>
